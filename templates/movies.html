@@ -108,8 +108,17 @@
                 <div class="modal fade" id="trailer" tabindex="-1">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
-                            <iframe width="800px" height="500px" src="{{movies.movie_trailer}}"
-                                allowfullscreen></iframe>
+                            <!-- <iframe width="800px" height="500px" src="{{movies.movie_trailer}}"
+                                allowfullscreen></iframe> -->
+                                <iframe
+                                width="800"
+                                height="500"
+                                src="{{ movies.trailer_embed_url }}"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                              </iframe>
+                              
                         </div>
                     </div>
                 </div>
@@ -209,6 +218,13 @@
 
         $('#btn-time').click(function () {
             $('#shows').modal('toggle')
+        });
+         // 🔧 Stop trailer video when modal is closed
+        $('#trailer').on('hidden.bs.modal', function () {
+            var iframe = $(this).find('iframe');
+            var src = iframe.attr('src');
+            iframe.attr('src', '');
+            iframe.attr('src', src);
         });
     </script>
 

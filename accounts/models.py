@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from urllib.parse import urlparse, parse_qs
 
 
 # Create your models here
@@ -19,7 +20,7 @@ class Cinema(models.Model):
 class Movie(models.Model):
     movie=models.AutoField(primary_key=True)
     movie_name=models.CharField(max_length=50)
-    movie_trailer=models.CharField(max_length=300, default="null")
+    movie_trailer=models.CharField(max_length=300, default="")
     movie_rdate=models.CharField(max_length=20, default="null")
     movie_des=models.TextField()
     movie_rating=models.DecimalField(max_digits=3, decimal_places=1)
@@ -29,6 +30,18 @@ class Movie(models.Model):
 
     def __str__(self):
         return self.movie_name
+    @property
+    def trailer_embed_url(self):
+        """
+        Parses the stored YouTube watch URL and returns an embeddable iframe URL.
+        """
+        # Extract the video ID from the query string
+        query = urlparse(self.movie_trailer).query
+        vid = parse_qs(query).get('v', [''])[0]
+        if not vid:
+            return ''
+        # Return standard YouTube embed URL (no-cookie domain for privacy)
+        return f'https://www.youtube-nocookie.com/embed/{vid}?rel=0&autoplay=0'
 
 class Shows(models.Model):
     shows=models.AutoField(primary_key=True)
