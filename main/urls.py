@@ -10,5 +10,11 @@ urlpatterns=[
     path('seat/<int:id>',views.seat,name='seat'),
     path('booked',views.booked,name='booked'),
     path('ticket/<int:id>',views.ticket,name='ticket'),
+    #for payment
+    path('checkout/',      views.checkout_page,          name='checkout_page'),
+    path('create-session/', views.create_checkout_session, name='create_checkout_session'),
+    path('success/',       views.checkout_success,       name='checkout_success'),
+    path('cancel/',        views.checkout_cancel,        name='checkout_cancel'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

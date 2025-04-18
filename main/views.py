@@ -42,3 +42,51 @@ def ticket(request, id):
     ticket = Bookings.objects.get(id=id)
     print(ticket.shows.price)
     return render(request,"ticket.html", {'ticket':ticket})
+
+
+#for payment
+
+# … your existing checkout_page and create_checkout_session …
+
+def checkout_success(request):
+    """Renders the success.html template after a successful payment."""
+    return render(request, 'success.html')
+
+
+def checkout_cancel(request):
+    """Renders the cancel.html template if the customer cancels."""
+    return render(request, 'cancel.html')
+
+
+from django.shortcuts import render, redirect
+import stripe
+from django.conf import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+def checkout_page(request):
+    return render(request, 'checkout.html')
+
+def create_checkout_session(request):
+    if request.method == 'POST':
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Movie Ticket',
+                        },
+                        'unit_amount': 1500,  # $15.00
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url='http://127.0.0.1:8000/success/',
+                cancel_url='http://127.0.0.1:8000/cancel/',
+            )
+            return redirect(session.url, code=303)
+
+        except Exception as e:
+            return render(request, 'error.html', {'message': str(e)})

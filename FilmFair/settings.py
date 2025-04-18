@@ -3,6 +3,8 @@ import os
 import django_heroku
 from decouple import config
 from django.contrib.messages import constants as message_constants
+#for payment
+from decouple import config  
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -69,6 +71,10 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST'),
         'PORT': config('DB_PORT'),
+        'OPTIONS': {
+            'connect_timeout': 60,  # Increase timeout
+        },
+        'CONN_MAX_AGE': 60,  # Keep DB connection open for reuse (seconds)
     }
 }
 
@@ -105,3 +111,5 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 django_heroku.settings(locals())
+STRIPE_SECRET_KEY  = config('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')

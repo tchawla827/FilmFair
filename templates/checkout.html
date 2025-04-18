@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Buy Ticket</title>
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <body>
+    <h2>Pay for your ticket</h2>
+    <form action="{% url 'create_checkout_session' %}" method="POST">
+        {% csrf_token %}
+        <button type="submit">Checkout</button>
+    </form>
+
+    
+    </form>
+  </body>
+</html>
