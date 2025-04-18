@@ -41,6 +41,25 @@
   h3 span {
     font-weight: 400;
   }
+  .checkout-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    background-color: #b12e2e; /* Bootstrap success color */
+    color: white;
+    border: none;
+  }
+
+  .checkout-btn:hover {
+    background-color: #45a045	;
+    color: white;
+  }
+
+  .checkout-form {
+    margin-right: 10px;
+  }
 </style>
 {% endblock %}
 
@@ -80,6 +99,16 @@
             </div>
           </div>
         </div>
+        <div class="col-12 d-flex justify-content-end mt-3">
+          <form action="{% url 'create_checkout_session' %}" method="POST" class="checkout-form">
+            {% csrf_token %}
+            <input type="hidden" name="ticket_id" value="{{ ticket.pk }}">
+            <button type="submit" class="btn btn-success checkout-btn">
+              Proceed to Pay ₹{{ ticket.shows.price }}
+            </button>
+          </form>
+        </div>
+    
       </div>
     </div>
   </div>

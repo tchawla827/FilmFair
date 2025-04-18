@@ -238,9 +238,9 @@
     </div>
     <div class="col-3">
       {% if user.is_authenticated %}
-      <!-- <button type="submit" form="book" class="btn btn-lg btn-block btn-primary"> Confirm Booking </button> -->
-      <a href="{% url 'checkout_page' %}" class="btn btn-lg btn-custom">
-        Confirm Booking <i class="fa fa-ticket"></i>
+      <button type="submit" form="book" class="btn btn-lg btn-block btn-primary"> Confirm Booking </button>
+      <!-- <a href="{% url 'checkout_page' %}" class="btn btn-lg btn-custom">
+        Confirm Booking <i class="fa fa-ticket"></i> -->
       </a>
       {% else %}
       <a href="/accounts/login" class="btn btn-lg btn-block btn-danger"> Login To Book </a>

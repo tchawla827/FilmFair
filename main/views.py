@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from accounts.models import *
 from django.http import HttpResponseRedirect
 # Create your views here.
@@ -49,8 +50,10 @@ def ticket(request, id):
 # … your existing checkout_page and create_checkout_session …
 
 def checkout_success(request):
-    """Renders the success.html template after a successful payment."""
-    return render(request, 'success.html')
+    ticket_id = request.GET.get('ticket_id')
+    # mark as paid, send email, etc.
+    return render(request, 'success.html', {'ticket_id': ticket_id})
+
 
 
 def checkout_cancel(request):
@@ -67,26 +70,37 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 def checkout_page(request):
     return render(request, 'checkout.html')
 
-def create_checkout_session(request):
-    if request.method == 'POST':
-        try:
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': 'Movie Ticket',
-                        },
-                        'unit_amount': 1500,  # $15.00
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                success_url='http://127.0.0.1:8000/success/',
-                cancel_url='http://127.0.0.1:8000/cancel/',
-            )
-            return redirect(session.url, code=303)
 
-        except Exception as e:
-            return render(request, 'error.html', {'message': str(e)})
+def create_checkout_session(request):
+    if request.method != 'POST':
+        return redirect('index')
+
+    ticket_id = request.POST.get('ticket_id')
+    ticket = get_object_or_404(Bookings, pk=ticket_id)
+    price = int(ticket.shows.price * 100)   # Stripe wants amount in smallest currency unit
+
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'inr',
+                    'product_data': {
+                        'name': f"Ticket #{ticket.pk} — {ticket.shows.movie.movie_name}",
+                    },
+                    'unit_amount': price,
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=request.build_absolute_uri(
+                reverse('checkout_success') + f"?ticket_id={ticket.pk}"
+            ),
+            cancel_url=request.build_absolute_uri(
+                reverse('checkout_cancel')
+            ),
+        )
+        return redirect(session.url, code=303)
+
+    except Exception as e:
+        return render(request, 'error.html', {'message': str(e)})
