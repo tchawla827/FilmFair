@@ -1,89 +1,138 @@
-from django.shortcuts import render,redirect
+from socket import IP_TTL
+from django.shortcuts import get_object_or_404, render,redirect
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.models import User, auth
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash,login
+from django.core.mail import send_mail
+from .models import Cinema, EmailOTP
+from django.conf import settings
+from datetime import timedelta
 from . models import *
 from django.db.models import Sum
+import random
 
 
 
-
-
-# Create your views here.
-def login(request):
-    if request.method=='POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = auth.authenticate(username= username, password= password)
-
-        if user is not None:
-            auth.login(request,user)
-            return redirect('/')
-        else:
-            messages.error(request,'Username/Password is incorrect')
-            return redirect('login')
-    else:
-        return render(request,"login.html")
+def send_otp(email):
+    """
+    Generate a 6-digit OTP, save or update it in EmailOTP,
+    and send it via email. Returns the OTP record's UUID.
+    """
+    code = f"{random.randint(0, 999999):06}"
+    otp, _ = EmailOTP.objects.update_or_create(
+        email=email,
+        defaults={"code": code, "created_at": timezone.now()}
+    )
+    send_mail(
+        "Your BoxOffice OTP",
+        f"Enter this code to complete your registration: {code}",
+        settings.DEFAULT_FROM_EMAIL,
+        [email],
+    )
+    return otp.uuid
 
 
 def register(request):
+    # Phase 1: User submits details → send OTP
+    if request.method == "POST" and "verify_uuid" not in request.POST:
+        # TODO: validate username/email/passwords as before
+        verify_uuid = send_otp(request.POST["email"])
+        return render(request, "verify_otp.html", {
+        "email":       request.POST["email"],
+        "verify_uuid": verify_uuid,
+        "is_cinema":   False,
+        "form_data":   request.POST,
+    })
 
-    if request.method == 'POST':
-        username = request.POST['username']
-        first_name = request.POST['firstname']
-        last_name = request.POST['lastname']
-        email = request.POST['email']
-        password1 = request.POST['password1']
-        password2 = request.POST['password2']
 
-        if password1==password2:
-            if User.objects.filter(username=username).exists():
-                messages.info(request,'username already exist')
-            elif User.objects.filter(email=email).exists():
-                messages.info(request,'email already exist')
-            else:        
-                user = User.objects.create_user(username = username, first_name= first_name, last_name= last_name, email=email,password=password1)
-                user.save()
-                messages.info(request,'User created')
-                return redirect('login')
+    # Phase 2: User submits OTP → verify & create account
+    elif request.method == "POST" and request.POST.get("verify_uuid"):
+        otp_entry = get_object_or_404(
+            EmailOTP,
+            uuid=request.POST["verify_uuid"],
+            email=request.POST["email"]
+        )
+        if timezone.now() - otp_entry.created_at > timedelta(minutes=5):
+            otp_entry.delete()
+            messages.error(request, "OTP expired – please try again.")
+            return redirect("register")
+
+        if otp_entry.code == request.POST["otp_code"]:
+            user = User.objects.create_user(
+                username=request.POST["username"],
+                first_name=request.POST["firstname"],
+                last_name=request.POST["lastname"],
+                email=request.POST["email"],
+                password=request.POST["password1"]
+            )
+            login(request, user)
+            otp_entry.delete()
+            return redirect("/")
         else:
-            messages.info(request, 'Password not match')
-        return redirect('register')                 
+            return render(request, "verify_otp.html", {
+                "email": request.POST["email"],
+                "verify_uuid": request.POST["verify_uuid"],
+                "error": "Wrong code, try again.",
+                "is_cinema": False,
+                "form_data": request.POST,
+            })
     else:
-        return render(request,"register.html")
+        return render(request, "register.html")
 
 
 def register_cinema(request):
+    # Phase 1: Cinema user submits details → send OTP
+    if request.method == "POST" and "verify_uuid" not in request.POST:
+        verify_uuid = send_otp(request.POST["email"])
+        return render(request, "verify_otp.html", {
+            "email": request.POST["email"],
+            "verify_uuid": verify_uuid,
+            "is_cinema": True,
+            "form_data": request.POST,
+        })
 
-    if request.method == 'POST':
-        username = request.POST['username']
-        first_name = request.POST['firstname']
-        last_name = request.POST['lastname']
-        email = request.POST['email']
-        password1 = request.POST['password1']
-        password2 = request.POST['password2']
+    # Phase 2: User submits OTP → verify & create cinema account
+    elif request.method == "POST" and request.POST.get("verify_uuid"):
+        otp_entry = get_object_or_404(
+            EmailOTP,
+            uuid=request.POST["verify_uuid"],
+            email=request.POST["email"]
+        )
+        if timezone.now() - otp_entry.created_at > timedelta(minutes=5):
+            otp_entry.delete()
+            messages.error(request, "OTP expired – please try again.")
+            return redirect("register_cinema")
 
-        cinema_name = request.POST['cinema']
-        phone = request.POST['phone']
-        city = request.POST['city']
-        address = request.POST['address']
-
-        if password1==password2:
-            if User.objects.filter(username=username).exists():
-                messages.info(request,'username already exist')
-            elif User.objects.filter(email=email).exists():
-                messages.info(request,'email already exist')
-            else:
-                user = User.objects.create_user(username = username, first_name= first_name, last_name= last_name, email=email,password=password1)
-                cin_user = Cinema(cinema_name = cinema_name, phoneno = phone, city = city, address = address, user = user)
-                cin_user.save()
-                messages.info(request,'User created')
-                return redirect('login')
+        if otp_entry.code == request.POST["otp_code"]:
+            user = User.objects.create_user(
+                username=request.POST["username"],
+                first_name=request.POST["firstname"],
+                last_name=request.POST["lastname"],
+                email=request.POST["email"],
+                password=request.POST["password1"]
+            )
+            Cinema.objects.create(
+                cinema_name=request.POST["cinema"],
+                phoneno=request.POST["phone"],
+                city=request.POST["city"],
+                address=request.POST["address"],
+                user=user
+            )
+            login(request, user)
+            otp_entry.delete()
+            return redirect("dashboard")
         else:
-            messages.info(request, 'Password not match')
-        return redirect('register_cinema')                 
+            return render(request, "verify_otp.html", {
+                "email": request.POST["email"],
+                "verify_uuid": request.POST["verify_uuid"],
+                "error": "Wrong code, try again.",
+                "is_cinema": True,
+                "form_data": request.POST,
+            })
     else:
-        return render(request,"register_cinema.html")
+        return render(request, "register_cinema.html")
+
 
 def logout(request):
     auth.logout(request)

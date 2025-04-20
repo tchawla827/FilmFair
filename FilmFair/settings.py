@@ -113,3 +113,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 django_heroku.settings(locals())
 STRIPE_SECRET_KEY  = config('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+
+# Email / SMTP configuration
+EMAIL_BACKEND        = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST           = "smtp.gmail.com"
+EMAIL_PORT           = 587
+EMAIL_USE_TLS        = True
+EMAIL_HOST_USER      = config("EMAIL_USER")
+EMAIL_HOST_PASSWORD  = config("EMAIL_PASS")
+DEFAULT_FROM_EMAIL   = config("EMAIL_USER")   # or e.g. "no‑reply@yourdomain.com"

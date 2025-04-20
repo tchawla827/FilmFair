@@ -31,32 +31,49 @@
                 <div class="form-row">
                     <div class="form-group col-12">
                         <label class="form-label">Username</label>
-                        <input class="form-control" type="text" placeholder="username" name="username">
+                        <input class="form-control" type="text" placeholder="username" name="username" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-6 col-12">
                         <label class="form-label">First Name</label>
-                        <input class="form-control" type="text" placeholder="firstname" name="firstname">
+                        <input class="form-control" type="text" placeholder="firstname" name="firstname" required>
                     </div>
                     <div class="form-group col-md-6 col-12">
                         <label class="form-label">Last Name</label>
-                        <input class="form-control" type="text" placeholder="lastname" name="lastname">
+                        <input class="form-control" type="text" placeholder="lastname" name="lastname" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label"><i class="fa fa-envelope-o" aria-hidden="true"></i> E-mail</label>
-                    <input class="form-control" type="email" placeholder="@" name="email">
+                    <input class="form-control" type="email" placeholder="@" name="email" required>
                 </div>
                 <div class="form-row">
-                <div class="form-group col-md-6 col-12">
-                    <label class="form-label"> Password</label>
-                    <input class="form-control" type="password" placeholder="pass" name="password1">
-                </div>
-                <div class="form-group col-md-6 col-12">
-                    <label class="form-label">Repeat Password</label>
-                    <input class="form-control" type="password" placeholder="pass" name="password2">
-                </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6 col-12">
+                          <label>Password</label>
+                          <input
+                            class="form-control"
+                            type="password"
+                            name="password1"
+                            placeholder="••••••••"
+                            minlength="8"
+                            pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}"
+                            title="At least 8 characters, with upper & lower case, a number and a special character"
+                            required
+                          >
+                        </div>
+                        <div class="form-group col-md-6 col-12">
+                          <label>Repeat Password</label>
+                          <input
+                            class="form-control"
+                            type="password"
+                            name="password2"
+                            placeholder="••••••••"
+                            required
+                          >
+                        </div>
+                      </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-6 col-12">
@@ -82,7 +99,25 @@
         </div>
     </div>
 </div>
+{% block extra_js %}
+<script>
+  const form = document.querySelector('.register');
+  const pwd1 = form.querySelector('[name="password1"]');
+  const pwd2 = form.querySelector('[name="password2"]');
+  const msg = document.createElement('div');
+  msg.className = 'text-danger small mt-1';
+  pwd2.parentNode.appendChild(msg);
 
+  form.addEventListener('submit', e => {
+    msg.textContent = '';
+    if (pwd1.value !== pwd2.value) {
+      e.preventDefault();
+      msg.textContent = 'Passwords do not match';
+      pwd2.focus();
+    }
+  });
+</script>
+{% endblock %}
 {% for message in messages %}
 <h4> {{message}} </h4>
 {% endfor %}

@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from urllib.parse import urlparse, parse_qs
 
+from django.utils import timezone
+import uuid
 
 # Create your models here
 
@@ -16,6 +18,18 @@ class Cinema(models.Model):
 
     def __str__(self):
         return self.cinema_name
+    
+class EmailOTP(models.Model):
+    """
+    Temporarily holds an OTP for a given email.
+    """
+    email      = models.EmailField()
+    code       = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    uuid       = models.UUIDField(default=uuid.uuid4, unique=True)
+
+    def __str__(self):
+        return f"{self.email} – {self.code}"
 
 class Movie(models.Model):
     movie=models.AutoField(primary_key=True)
