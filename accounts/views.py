@@ -31,7 +31,21 @@ def send_otp(email):
         [email],
     )
     return otp.uuid
+# Create your views here.
+def login(request):
+    if request.method=='POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = auth.authenticate(username= username, password= password)
 
+        if user is not None:
+            auth.login(request,user)
+            return redirect('/')
+        else:
+            messages.error(request,'Username/Password is incorrect')
+            return redirect('login')
+    else:
+        return render(request,"login.html")
 
 def register(request):
     # Phase 1: User submits details → send OTP
