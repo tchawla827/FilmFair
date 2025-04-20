@@ -44,6 +44,11 @@ def ticket(request, id):
     print(ticket.shows.price)
     return render(request,"ticket.html", {'ticket':ticket})
 
+def booked_ticket(request, pk):
+    ticket = get_object_or_404(Bookings, pk=pk)
+    return render(request, 'booked_ticket.html', {'ticket': ticket})
+
+
 
 #for payment
 

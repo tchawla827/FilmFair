@@ -36,7 +36,7 @@
                         <th>{{b.shows.cinema.cinema_name}}</th>
                         <th>{{b.shows.date}}</th>
                         <th>Rs. {{b.shows.price}}</th>
-                        <th><a class="btn submit" href="/ticket/{{b.pk}}" target="_blank">View Ticket</a></th>
+                        <th><a class="btn submit" href="{% url 'booked_ticket' b.pk %}" target="_blank">View Ticket</a></th>
                     </tr>
                     {% endfor %}
 

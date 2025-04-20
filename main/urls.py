@@ -10,6 +10,7 @@ urlpatterns=[
     path('seat/<int:id>',views.seat,name='seat'),
     path('booked',views.booked,name='booked'),
     path('ticket/<int:id>',views.ticket,name='ticket'),
+    path('booked_ticket/<int:pk>/', views.booked_ticket, name='booked_ticket'),
     #for payment
     path('checkout/',      views.checkout_page,          name='checkout_page'),
     path('create-session/', views.create_checkout_session, name='create_checkout_session'),
