@@ -53,7 +53,7 @@ Follow these steps to get **FilmFair** up and running on your local machine for 
    STRIPE_SECRET_KEY=stripe_secret_key
    STRIPE_PUBLISHABLE_KEY=stripe_publishable_key
    EMAIL_USER=user_name@gmail.com
-   EMAIL_PASS=user_pass
+   EMAIL_PASS=user_pass(16 characters generated at google security page)
    ```
 
 4. Apply migrations and create a superuser:
@@ -92,6 +92,9 @@ For feedback or contributions, feel free to open an issue or pull request.
 
 **Tavish Chawla**  
 📧 [tchawla827@gmail.com](mailto:tchawla827@gmail.com)  
+🎓 B.Tech, IIIT Allahabad
+**Grish Gautam**  
+📧 [grishgautam03@gmail.com](mailto:grishgautam03@gmail.com)  
 🎓 B.Tech, IIIT Allahabad
 
 ---
