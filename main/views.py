@@ -43,7 +43,7 @@ def booked(request):
         book.save()
         return render(request, "booked.html", {'book': book})
 
-# Ticket view — FIXED to show total price
+# Ticket view — shows total price for selected seats
 def ticket(request, id):
     ticket = Bookings.objects.get(id=id)
     seat_list = ticket.useat.split(',') if ticket.useat else []
@@ -54,16 +54,22 @@ def ticket(request, id):
         'total_price': total_price
     })
 
-# Alternate ticket view
+# Booked ticket view — also shows total price
 def booked_ticket(request, pk):
     ticket = get_object_or_404(Bookings, pk=pk)
-    return render(request, 'booked_ticket.html', {'ticket': ticket})
+    seat_list = ticket.useat.split(',') if ticket.useat else []
+    seat_count = len(seat_list)
+    total_price = seat_count * ticket.shows.price
+    return render(request, 'booked_ticket.html', {
+        'ticket': ticket,
+        'total_price': total_price
+    })
 
-# Stripe Checkout integration
+# Stripe Checkout
 def checkout_page(request):
     return render(request, 'checkout.html')
 
-# Create Stripe checkout session — FIXED to charge based on seat count
+# Stripe session creation — charges for total price based on seat count
 def create_checkout_session(request):
     if request.method != 'POST':
         return redirect('index')
@@ -84,7 +90,7 @@ def create_checkout_session(request):
                     'product_data': {
                         'name': f"Ticket #{ticket.pk} — {ticket.shows.movie.movie_name}",
                     },
-                    'unit_amount': int(total_price * 100),  # in paise
+                    'unit_amount': int(total_price * 100),  # Stripe uses smallest unit (paise)
                 },
                 'quantity': 1,
             }],
