@@ -1,34 +1,39 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from accounts.models import *
 from django.http import HttpResponseRedirect
-# Create your views here.
+from accounts.models import *
+import stripe
+from django.conf import settings
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
+# Home page
 def index(request):
     movies = Movie.objects.all()
     context = {
         'mov': movies
     }
-    return render(request,"index.html", context)
+    return render(request, "index.html", context)
 
+# Movie details and available shows
 def movies(request, id):
-    #cin = Cinema.objects.filter(shows__movie=id).distinct()
     movies = Movie.objects.get(movie=id)
-    cin = Cinema.objects.filter(cinema_show__movie=movies).prefetch_related('cinema_show').distinct()  # get all cinema
+    cin = Cinema.objects.filter(cinema_show__movie=movies).prefetch_related('cinema_show').distinct()
     show = Shows.objects.filter(movie=id)
     context = {
-        'movies':movies,
-        'show':show,
-        'cin':cin,
+        'movies': movies,
+        'show': show,
+        'cin': cin,
     }
-    return render(request, "movies.html", context )
+    return render(request, "movies.html", context)
 
+# Show seats view
 def seat(request, id):
     show = Shows.objects.get(shows=id)
     seat = Bookings.objects.filter(shows=id)
-    return render(request,"seat.html", {'show':show, 'seat':seat})    
+    return render(request, "seat.html", {'show': show, 'seat': seat})
 
+# After booking is confirmed
 def booked(request):
     if request.method == 'POST':
         user = request.user
@@ -36,53 +41,39 @@ def booked(request):
         show = request.POST['show']
         book = Bookings(useat=seat, shows_id=show, user=user)
         book.save()
-        return render(request,"booked.html", {'book':book})    
-        
+        return render(request, "booked.html", {'book': book})
 
+# Ticket view — FIXED to show total price
 def ticket(request, id):
     ticket = Bookings.objects.get(id=id)
-    print(ticket.shows.price)
-    return render(request,"ticket.html", {'ticket':ticket})
+    seat_list = ticket.useat.split(',') if ticket.useat else []
+    seat_count = len(seat_list)
+    total_price = seat_count * ticket.shows.price
+    return render(request, "ticket.html", {
+        'ticket': ticket,
+        'total_price': total_price
+    })
 
+# Alternate ticket view
 def booked_ticket(request, pk):
     ticket = get_object_or_404(Bookings, pk=pk)
     return render(request, 'booked_ticket.html', {'ticket': ticket})
 
-
-
-#for payment
-
-# … your existing checkout_page and create_checkout_session …
-
-def checkout_success(request):
-    ticket_id = request.GET.get('ticket_id')
-    # mark as paid, send email, etc.
-    return render(request, 'success.html', {'ticket_id': ticket_id})
-
-
-
-def checkout_cancel(request):
-    """Renders the cancel.html template if the customer cancels."""
-    return render(request, 'cancel.html')
-
-
-from django.shortcuts import render, redirect
-import stripe
-from django.conf import settings
-
-stripe.api_key = settings.STRIPE_SECRET_KEY
-
+# Stripe Checkout integration
 def checkout_page(request):
     return render(request, 'checkout.html')
 
-
+# Create Stripe checkout session — FIXED to charge based on seat count
 def create_checkout_session(request):
     if request.method != 'POST':
         return redirect('index')
 
     ticket_id = request.POST.get('ticket_id')
     ticket = get_object_or_404(Bookings, pk=ticket_id)
-    price = int(ticket.shows.price * 100)   # Stripe wants amount in smallest currency unit
+
+    seat_list = ticket.useat.split(',') if ticket.useat else []
+    seat_count = len(seat_list)
+    total_price = seat_count * ticket.shows.price
 
     try:
         session = stripe.checkout.Session.create(
@@ -93,7 +84,7 @@ def create_checkout_session(request):
                     'product_data': {
                         'name': f"Ticket #{ticket.pk} — {ticket.shows.movie.movie_name}",
                     },
-                    'unit_amount': price,
+                    'unit_amount': int(total_price * 100),  # in paise
                 },
                 'quantity': 1,
             }],
@@ -109,3 +100,12 @@ def create_checkout_session(request):
 
     except Exception as e:
         return render(request, 'error.html', {'message': str(e)})
+
+# Payment success
+def checkout_success(request):
+    ticket_id = request.GET.get('ticket_id')
+    return render(request, 'success.html', {'ticket_id': ticket_id})
+
+# Payment cancel
+def checkout_cancel(request):
+    return render(request, 'cancel.html')

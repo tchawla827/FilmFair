@@ -87,7 +87,7 @@
             <div class="col-6">
               <h3>Booking ID :<span> {{ticket.pk}}</span> </h3>
               <h3>Date :<span> {{ticket.shows.date}}</span> </h3>
-              <h3>Price :<span> ₹{{ticket.shows.price}}</span> </h3>
+              <h3>Price :<span> ₹{{ total_price }}</span> </h3>
             </div>
             <div class="col-6">
               <h3>Seats :<span> {{ticket.useat}}</span> </h3>
@@ -104,8 +104,9 @@
             {% csrf_token %}
             <input type="hidden" name="ticket_id" value="{{ ticket.pk }}">
             <button type="submit" class="btn btn-success checkout-btn">
-              Proceed to Pay ₹{{ ticket.shows.price }}
+              Proceed to Pay ₹{{ total_price }}
             </button>
+            
           </form>
         </div>
     
