@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}<title>Invoice #{{ ticket.pk }}</title>{% endblock %}
+{% block title %}
+  <title>Invoice #{{ ticket.pk }}</title>
+{% endblock %}
 
 {% block style %}
 <style>
@@ -22,34 +24,55 @@
     <div class="col-8 card shadow">
       <!-- Header strip -->
       <div class="row justify-content-around pass-h p-2">
-        <div class="col-4"><h2 class="text-white"><i class="fa fa-video-camera"></i> BoxOffice</h2></div>
+        <div class="col-4">
+          <h2 class="text-white"><i class="fa fa-video-camera"></i>FilmFair</h2>
+        </div>
         <div class="col-6 text-center text-white">
           <h2>{{ ticket.shows.movie.movie_name }} ({{ ticket.shows.cinema.cinema_name }})</h2>
         </div>
       </div>
+
       <!-- Body -->
       <div class="row mt-4 mb-4">
         <div class="col-3">
-          <img class="img-fluid border" src="{{ ticket.shows.movie.movie_poster.url }}">
+          <img class="img-fluid border" src="{{ ticket.shows.movie.movie_poster.url }}" alt="Poster">
         </div>
         <div class="col-9">
           <div class="row">
             <div class="col-6">
-              <h4>Invoice / Ticket&nbsp;#{{ ticket.pk }}</h4>
-              <h5>Date&nbsp;:&nbsp;{{ ticket.shows.date }}</h5>
-              <h5>Total&nbsp;:&nbsp;₹{{ total_price }}</h5>
+              <h4>Invoice / Ticket #{{ ticket.pk }}</h4>
+              <h5>Date : {{ ticket.shows.date }}</h5>
+              <h5>Total : ₹{{ total_price }}</h5>
             </div>
             <div class="col-6">
-              <h5>Seats&nbsp;:&nbsp;{{ ticket.useat }}</h5>
-              <h5>Time&nbsp;:&nbsp;{{ ticket.shows.time }}</h5>
-              <h5>Hall&nbsp;:&nbsp;H1</h5>
+              <h5>Seats : {{ ticket.useat }}</h5>
+              <h5>Time : {{ ticket.shows.time }}</h5>
+              <h5>Hall : H1</h5>
             </div>
-            <div class="col-12 mt-3 info">
-              <i class="fa fa-location-arrow"></i> {{ ticket.shows.cinema.cinema_name }} :
+          </div>
+
+          {% if payment %}
+          <div class="row mt-3">
+            <div class="col-6">
+              <h5>Paid at : {{ payment.paid_at }}</h5>
+              <h5>Amount Paid : ₹{{ payment.amount }} {{ payment.currency }}</h5>
+            </div>
+            <div class="col-6">
+              <h5>Method : {{ payment.method }}</h5>
+              <h5>Status : {{ payment.status|capfirst }}</h5>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="row mt-3 info">
+            <div class="col-12">
+              <i class="fa fa-location-arrow"></i>
+              {{ ticket.shows.cinema.cinema_name }} :&nbsp;
               <span>{{ ticket.shows.cinema.address }}</span>
             </div>
           </div>
         </div>
+
         <!-- Action buttons (hidden on print) -->
         <div class="col-12 d-flex justify-content-end mt-3 no-print">
           <a href="#" class="btn btn-secondary me-2" onclick="window.print()">Print</a>
