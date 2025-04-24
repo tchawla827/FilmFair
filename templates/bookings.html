@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}
@@ -9,45 +9,42 @@
 <link rel="stylesheet" href={% static "styles/bookings.css" %} />
 {% endblock %}
 
-
 {% block content %}
-
 <div class="container-fluid box">
-    <div class="row justify-content-center">
-
-        <div class="col-8 card p-2 shadow mt-5">
-            <table class="table text-center">
-                <thead class="thead-dark">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Movie Name</th>
-                        <th scope="col">Cinema</th>
-                        <th scope="col">Show Date</th>
-                        <th scope="col">Price</th>
-                        <th scope="col">View</th>
-                    </tr>
-                </thead>
-                <tbody>
-
-                    {% for b in book %}
-                    <tr>
-                        <th>{{b.pk}}</th>
-                        <th>{{b.shows.movie.movie_name}}</th>
-                        <th>{{b.shows.cinema.cinema_name}}</th>
-                        <th>{{b.shows.date}}</th>
-                        <th>Rs. {{b.shows.price}}</th>
-                        <th><a class="btn submit" href="{% url 'booked_ticket' b.pk %}" target="_blank">View Ticket</a></th>
-                    </tr>
-                    {% endfor %}
-
-                </tbody>
-            </table>
-        </div>
-
+  <div class="row justify-content-center">
+    <div class="col-8 card p-2 shadow mt-5">
+      <table class="table text-center">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Movie Name</th>
+            <th scope="col">Cinema</th>
+            <th scope="col">Show Date</th>
+            <th scope="col">Total&nbsp;Price</th>
+            <th scope="col">View</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in book %}
+          <tr>
+            <td>{{ b.pk }}</td>
+            <td>{{ b.shows.movie.movie_name }}</td>
+            <td>{{ b.shows.cinema.cinema_name }}</td>
+            <td>{{ b.shows.date }}</td>
+            <td>₹{{ b.total_price }}</td>
+            <td>
+              <a
+                class="btn submit"
+                href="{% url 'booked_ticket' b.pk %}"
+                target="_blank"
+                >View&nbsp;Ticket</a
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
-{% endblock %}
-
-
-{% block JQuery %}
 {% endblock %}

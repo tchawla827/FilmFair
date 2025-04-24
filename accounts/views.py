@@ -1,18 +1,19 @@
 from socket import IP_TTL
-from django.shortcuts import get_object_or_404, render,redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.models import User, auth
-from django.contrib.auth import update_session_auth_hash,login
+from django.contrib.auth import update_session_auth_hash, login
 from django.core.mail import send_mail
 from .models import Cinema, EmailOTP
 from django.conf import settings
 from datetime import timedelta
-from . models import *
+from .models import *
 from django.db.models import Sum
 import random
 
 
+# ------------- helpers -------------------------------------------------- #
 
 def send_otp(email):
     """
@@ -31,42 +32,48 @@ def send_otp(email):
         [email],
     )
     return otp.uuid
-# Create your views here.
+
+
+# ------------- auth ----------------------------------------------------- #
+
 def login(request):
-    if request.method=='POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = auth.authenticate(username= username, password= password)
+    if request.method == "POST":
+        username = request.POST["username"]
+        password = request.POST["password"]
+        user = auth.authenticate(username=username, password=password)
 
         if user is not None:
-            auth.login(request,user)
-            return redirect('/')
-        else:
-            messages.error(request,'Username/Password is incorrect')
-            return redirect('login')
-    else:
-        return render(request,"login.html")
+            auth.login(request, user)
+            return redirect("/")
+        messages.error(request, "Username / Password is incorrect")
+        return redirect("login")
+
+    return render(request, "login.html")
+
 
 def register(request):
-    # Phase 1: User submits details → send OTP
+    # phase-1  → user submits details → send OTP
     if request.method == "POST" and "verify_uuid" not in request.POST:
-        # TODO: validate username/email/passwords as before
         verify_uuid = send_otp(request.POST["email"])
-        return render(request, "verify_otp.html", {
-        "email":       request.POST["email"],
-        "verify_uuid": verify_uuid,
-        "is_cinema":   False,
-        "form_data":   request.POST,
-    })
+        return render(
+            request,
+            "verify_otp.html",
+            {
+                "email": request.POST["email"],
+                "verify_uuid": verify_uuid,
+                "is_cinema": False,
+                "form_data": request.POST,
+            },
+        )
 
-
-    # Phase 2: User submits OTP → verify & create account
-    elif request.method == "POST" and request.POST.get("verify_uuid"):
+    # phase-2 → user submits OTP → verify & create account
+    if request.method == "POST" and request.POST.get("verify_uuid"):
         otp_entry = get_object_or_404(
             EmailOTP,
             uuid=request.POST["verify_uuid"],
-            email=request.POST["email"]
+            email=request.POST["email"],
         )
+
         if timezone.now() - otp_entry.created_at > timedelta(minutes=5):
             otp_entry.delete()
             messages.error(request, "OTP expired – please try again.")
@@ -78,41 +85,52 @@ def register(request):
                 first_name=request.POST["firstname"],
                 last_name=request.POST["lastname"],
                 email=request.POST["email"],
-                password=request.POST["password1"]
+                password=request.POST["password1"],
             )
             login(request, user)
             otp_entry.delete()
             return redirect("/")
-        else:
-            return render(request, "verify_otp.html", {
+
+        # wrong code
+        return render(
+            request,
+            "verify_otp.html",
+            {
                 "email": request.POST["email"],
                 "verify_uuid": request.POST["verify_uuid"],
                 "error": "Wrong code, try again.",
                 "is_cinema": False,
                 "form_data": request.POST,
-            })
-    else:
-        return render(request, "register.html")
+            },
+        )
+
+    # GET
+    return render(request, "register.html")
 
 
 def register_cinema(request):
-    # Phase 1: Cinema user submits details → send OTP
+    # phase-1
     if request.method == "POST" and "verify_uuid" not in request.POST:
         verify_uuid = send_otp(request.POST["email"])
-        return render(request, "verify_otp.html", {
-            "email": request.POST["email"],
-            "verify_uuid": verify_uuid,
-            "is_cinema": True,
-            "form_data": request.POST,
-        })
+        return render(
+            request,
+            "verify_otp.html",
+            {
+                "email": request.POST["email"],
+                "verify_uuid": verify_uuid,
+                "is_cinema": True,
+                "form_data": request.POST,
+            },
+        )
 
-    # Phase 2: User submits OTP → verify & create cinema account
-    elif request.method == "POST" and request.POST.get("verify_uuid"):
+    # phase-2
+    if request.method == "POST" and request.POST.get("verify_uuid"):
         otp_entry = get_object_or_404(
             EmailOTP,
             uuid=request.POST["verify_uuid"],
-            email=request.POST["email"]
+            email=request.POST["email"],
         )
+
         if timezone.now() - otp_entry.created_at > timedelta(minutes=5):
             otp_entry.delete()
             messages.error(request, "OTP expired – please try again.")
@@ -124,51 +142,60 @@ def register_cinema(request):
                 first_name=request.POST["firstname"],
                 last_name=request.POST["lastname"],
                 email=request.POST["email"],
-                password=request.POST["password1"]
+                password=request.POST["password1"],
             )
             Cinema.objects.create(
                 cinema_name=request.POST["cinema"],
                 phoneno=request.POST["phone"],
                 city=request.POST["city"],
                 address=request.POST["address"],
-                user=user
+                user=user,
             )
             login(request, user)
             otp_entry.delete()
             return redirect("dashboard")
-        else:
-            return render(request, "verify_otp.html", {
+
+        # wrong code
+        return render(
+            request,
+            "verify_otp.html",
+            {
                 "email": request.POST["email"],
                 "verify_uuid": request.POST["verify_uuid"],
                 "error": "Wrong code, try again.",
                 "is_cinema": True,
                 "form_data": request.POST,
-            })
-    else:
-        return render(request, "register_cinema.html")
+            },
+        )
+
+    # GET
+    return render(request, "register_cinema.html")
 
 
 def logout(request):
     auth.logout(request)
-    return redirect('/')
+    return redirect("/")
+
+
+# ------------- profile & user settings --------------------------------- #
 
 def profile(request):
     u = request.user
-    if request.method == 'POST':
-        username = request.POST['username']
-        first_name = request.POST['fn']
-        last_name = request.POST['ln']
-        email = request.POST['email']
-        old = request.POST['old']
-        new = request.POST['new']
-        user = User.objects.get(pk = u.pk)        
-            
+    if request.method == "POST":
+        username = request.POST["username"]
+        first_name = request.POST["fn"]
+        last_name = request.POST["ln"]
+        email = request.POST["email"]
+        old = request.POST["old"]
+        new = request.POST["new"]
+        user = User.objects.get(pk=u.pk)
+
         if User.objects.filter(username=username).exclude(pk=u.pk).exists():
-            messages.error(request,'Username already exists')
-        
+            messages.error(request, "Username already exists")
+
         elif User.objects.filter(email=email).exclude(pk=u.pk).exists():
-                messages.error(request,'Email already exists')
-        
+            messages.error(request, "Email already exists")
+
         elif user.check_password(old):
             user.username = username
             user.first_name = first_name
@@ -176,56 +203,79 @@ def profile(request):
             user.email = email
             user.set_password(new)
             user.save()
-            #update session
-            update_session_auth_hash(request, user)
-
-            messages.success(request,'Profile updated')
+            update_session_auth_hash(request, user)  # keep user logged-in
+            messages.success(request, "Profile updated")
         else:
-            messages.error(request,'Wrong Old Password')
-            
-        return redirect('profile')
-    
-    else:
-        user = request.user
-        return render(request,"profile.html")
+            messages.error(request, "Wrong Old Password")
+
+        return redirect("profile")
+
+    return render(request, "profile.html")
+
+
+# ------------- **FIXED** bookings list --------------------------------- #
 
 def bookings(request):
+    """
+    List of bookings for the logged-in user.
+
+    We attach a ``total_price`` attribute to every ``Bookings`` instance
+    so the template can directly print the correct amount (unit-price × seat-count).
+    """
     user = request.user
-    book = Bookings.objects.filter(user=user.pk)
-    return render(request,"bookings.html", {'book':book} )
+    # eager-load related show / cinema / movie to avoid N+1 queries
+    bookings_qs = (
+        Bookings.objects.filter(user=user.pk)
+        .select_related("shows", "shows__movie", "shows__cinema")
+        .order_by("-pk")
+    )
+
+    for b in bookings_qs:
+        seats = [s for s in b.useat.split(",") if s]  # remove possible blanks
+        b.total_price = len(seats) * b.shows.price
+
+    return render(request, "bookings.html", {"book": bookings_qs})
+
+
+# ------------- cinema dashboard & earnings ----------------------------- #
 
 def dashboard(request):
     user = request.user
-    m = Shows.objects.filter(cinema=user.cinema).values('movie','movie__movie_name','movie__movie_poster').distinct()
-    print(m)
-    return render(request,"dashboard.html", {'list':m})
+    m = (
+        Shows.objects.filter(cinema=user.cinema)
+        .values("movie", "movie__movie_name", "movie__movie_poster")
+        .distinct()
+    )
+    return render(request, "dashboard.html", {"list": m})
+
 
 def earnings(request):
     user = request.user
     d = Bookings.objects.filter(shows__cinema=user.cinema)
-    total = Bookings.objects.filter(shows__cinema=user.cinema).aggregate(Sum('shows__price'))
-    return render(request,"earnings.html", {'s':d, 'total':total})
+    total = Bookings.objects.filter(shows__cinema=user.cinema).aggregate(
+        Sum("shows__price")
+    )
+    return render(request, "earnings.html", {"s": d, "total": total})
+
+
+# ------------- add shows ------------------------------------------------ #
 
 def add_shows(request):
     user = request.user
 
-    if request.method == 'POST':
-        m = request.POST['m']
-        t = request.POST['t']
-        d = request.POST['d']
-        p = request.POST['p']
+    if request.method == "POST":
+        m = request.POST["m"]
+        t = request.POST["t"]
+        d = request.POST["d"]
+        p = request.POST["p"]
         i = user.cinema.pk
 
-        show = Shows(cinema_id = i, movie_id = m, date = d, time = t, price = p)
+        show = Shows(cinema_id=i, movie_id=m, date=d, time=t, price=p)
         show.save()
-        messages.success(request,'Show Added')
-        return redirect('add_shows')
+        messages.success(request, "Show Added")
+        return redirect("add_shows")
 
-    else:    
-        m = Movie.objects.all()
-        sh = Shows.objects.filter(cinema=user.cinema)
-        data = {
-            'mov':m,
-            's':sh
-        }
-        return render(request,"add_shows.html", data)
+    # GET
+    m = Movie.objects.all()
+    sh = Shows.objects.filter(cinema=user.cinema)
+    return render(request, "add_shows.html", {"mov": m, "s": sh})
