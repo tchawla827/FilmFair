@@ -96,5 +96,8 @@ For feedback or contributions, feel free to open an issue or pull request.
 **Grish Gautam**  
 📧 [grishgautam03@gmail.com](mailto:grishgautam03@gmail.com)  
 🎓 B.Tech, IIIT Allahabad
+**Lakshya Gurjar**  
+📧 [lakshygurjar2095@gmail.com](mailto:lakshygurjar2095@gmail.com)  
+🎓 B.Tech, IIIT Allahabad
 
 ---
