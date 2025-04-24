@@ -2,15 +2,16 @@ from socket import IP_TTL
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib import messages
-from django.contrib.auth.models import User, auth
-from django.contrib.auth import update_session_auth_hash, login
+from django.contrib.auth import authenticate, login as auth_login, update_session_auth_hash
+from django.contrib.auth.models import User
+from django.contrib import auth
 from django.core.mail import send_mail
-from .models import Cinema, EmailOTP
 from django.conf import settings
 from datetime import timedelta
-from .models import *
-from django.db.models import Sum
 import random
+
+from .models import Cinema, EmailOTP, Bookings, Shows, Movie
+from django.db.models import Sum
 
 
 # ------------- helpers -------------------------------------------------- #
@@ -40,10 +41,10 @@ def login(request):
     if request.method == "POST":
         username = request.POST["username"]
         password = request.POST["password"]
-        user = auth.authenticate(username=username, password=password)
+        user = authenticate(username=username, password=password)
 
         if user is not None:
-            auth.login(request, user)
+            auth_login(request, user)
             return redirect("/")
         messages.error(request, "Username / Password is incorrect")
         return redirect("login")
@@ -87,7 +88,7 @@ def register(request):
                 email=request.POST["email"],
                 password=request.POST["password1"],
             )
-            login(request, user)
+            auth_login(request, user)
             otp_entry.delete()
             return redirect("/")
 
@@ -109,7 +110,7 @@ def register(request):
 
 
 def register_cinema(request):
-    # phase-1
+    # phase-1 → user submits details → send OTP
     if request.method == "POST" and "verify_uuid" not in request.POST:
         verify_uuid = send_otp(request.POST["email"])
         return render(
@@ -123,7 +124,7 @@ def register_cinema(request):
             },
         )
 
-    # phase-2
+    # phase-2 → user submits OTP → verify & create account
     if request.method == "POST" and request.POST.get("verify_uuid"):
         otp_entry = get_object_or_404(
             EmailOTP,
@@ -151,7 +152,7 @@ def register_cinema(request):
                 address=request.POST["address"],
                 user=user,
             )
-            login(request, user)
+            auth_login(request, user)
             otp_entry.delete()
             return redirect("dashboard")
 
@@ -223,7 +224,6 @@ def bookings(request):
     so the template can directly print the correct amount (unit-price × seat-count).
     """
     user = request.user
-    # eager-load related show / cinema / movie to avoid N+1 queries
     bookings_qs = (
         Bookings.objects.filter(user=user.pk)
         .select_related("shows", "shows__movie", "shows__cinema")
@@ -231,7 +231,7 @@ def bookings(request):
     )
 
     for b in bookings_qs:
-        seats = [s for s in b.useat.split(",") if s]  # remove possible blanks
+        seats = [s for s in b.useat.split(",") if s]
         b.total_price = len(seats) * b.shows.price
 
     return render(request, "bookings.html", {"book": bookings_qs})
@@ -275,7 +275,6 @@ def add_shows(request):
         messages.success(request, "Show Added")
         return redirect("add_shows")
 
-    # GET
     m = Movie.objects.all()
     sh = Shows.objects.filter(cinema=user.cinema)
     return render(request, "add_shows.html", {"mov": m, "s": sh})
