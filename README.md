@@ -93,11 +93,17 @@ For feedback or contributions, feel free to open an issue or pull request.
 **Tavish Chawla**  
 📧 [tchawla827@gmail.com](mailto:tchawla827@gmail.com)  
 🎓 B.Tech, IIIT Allahabad
+
 **Grish Gautam**  
 📧 [grishgautam03@gmail.com](mailto:grishgautam03@gmail.com)  
 🎓 B.Tech, IIIT Allahabad
+
 **Lakshya Gurjar**  
 📧 [lakshygurjar2095@gmail.com](mailto:lakshygurjar2095@gmail.com)  
+🎓 B.Tech, IIIT Allahabad
+
+**Keesha Luthra**  
+📧 [keeshaluthra3018@gmail.com](mailto:keeshaluthra3018@gmail.com)  
 🎓 B.Tech, IIIT Allahabad
 
 ---
